@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -344,6 +345,15 @@ func (r *mutationResolver) sceneUpdate(ctx context.Context, input models.SceneUp
 
 func (r *mutationResolver) sceneUpdateCoverImage(ctx context.Context, s *models.Scene, coverImageData []byte) error {
 	qb := r.repository.Scene
+
+	if len(coverImageData) > 0 {
+		existing, err := qb.GetCover(ctx, s.ID)
+		if err != nil {
+			logger.Errorf("Error getting scene cover: %v", err)
+		} else if bytes.Equal(existing, coverImageData) {
+			return nil
+		}
+	}
 
 	// update cover table - empty data will clear the cover
 	if err := qb.UpdateCover(ctx, s.ID, coverImageData); err != nil {
